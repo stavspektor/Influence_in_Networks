@@ -9,16 +9,55 @@ instaglam_1_df = pd.read_csv('instaglam_1.csv')
 # Build the graphs
 G0 = nx.from_pandas_edgelist(instaglam0_df, 'userID', 'friendID')
 G_1 = nx.from_pandas_edgelist(instaglam_1_df, 'userID', 'friendID')
-
+"""
 # Build the new edges graph
 Diff = nx.difference(G0, G_1)
+"""
+
+#G0.nodes(data="purchase",default=False)
+nx.set_node_attributes(G0,False,name="purchase")
+print(list(G0.nodes)[0]["purchase"])
+
+"""
+# analyze the edge creation probability
+sum_common_hist = [0] * (G_1.number_of_nodes() - 2)
+sum_real_hist = [0] * (G_1.number_of_nodes() - 2)
+for user1 in nx.nodes(G_1):
+    for user2 in nx.nodes(G_1):
+        if user1 != user2 and G_1.has_edge(user1,user2) is False:
+            sum_common = len(list(nx.common_neighbors(G_1, user1, user2)))
+            sum_common_hist[sum_common] += 1
+            if G0.has_edge(user1,user2) is True:
+                sum_real_hist[sum_common] += 1
+
+probability_list = [0] * (G_1.number_of_nodes() - 2)
+for i in range(len(sum_common_hist)):
+    if sum_common_hist[i] != 0:
+        probability_list[i] = sum_real_hist[i]/sum_common_hist[i]
+    else:
+        probability_list[i] = 0
 
 
-nx.set_node_attributes(G0, False, name="purchase")
-print(G0.nodes[0]["purchase"])
+# Simulation until t=6
+Graph = G0
+Graph_prev = G0
+for i in range(6):
+    Graph_prev = Graph
+    for user1 in nx.nodes(Graph):
+        for user2 in nx.nodes(Graph):
+            if user1 != user2 and Graph.has_edge(user1, user2) is False:
+                sum_common = len(list(nx.common_neighbors(Graph, user1, user2)))
+                if random.random() < probability_list[sum_common]:
+                    Graph.add_edge(user1, user2)
+    """
+"""
+import matplotlib.pyplot as plt
+nx.draw(Graph, with_labels=True)
+plt.show()
+"""
 
 
-
+"""
 # Check triadic closure
 triadic = []
 for user1 in nx.nodes(G_1):
@@ -47,7 +86,7 @@ PE = nx.from_pandas_edgelist(predicted_edges_df, 'userID', 'friendID')
 probability = Diff.number_of_edges() / PE.number_of_edges()
 print(probability)
 
-"""
+
 
 # Simulating Pareto distribution
 x_min = 1
@@ -60,23 +99,10 @@ alpha = 1 + n * (1/sum_n)
 samples = (np.random.pareto(alpha, 1000)+1) * x_min
 print(alpha)
 
-
-
-# Simulation until t=6
-Graph = G0
-for i in range(6):
-    for user1 in nx.nodes(Graph):
-        for user2 in nx.nodes(Graph):
-            if (user1 != user2) & ((user1, user2) not in Graph.edges()):
-                if random.random() < probability:
-                    Graph.add_edge(user1, user2)
-
-
-import matplotlib.pyplot as plt
-nx.draw(Graph, with_labels=True)
-plt.show()
-
-
-
-
 """
+
+
+
+
+
+
