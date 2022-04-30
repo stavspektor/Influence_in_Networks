@@ -5,6 +5,7 @@ import random
 
 instaglam0_df = pd.read_csv('instaglam0.csv')
 instaglam_1_df = pd.read_csv('instaglam_1.csv')
+artist_df = pd.read_csv('spotifly.csv')
 
 # Build the graphs
 G0 = nx.from_pandas_edgelist(instaglam0_df, 'userID', 'friendID')
@@ -14,11 +15,24 @@ G_1 = nx.from_pandas_edgelist(instaglam_1_df, 'userID', 'friendID')
 Diff = nx.difference(G0, G_1)
 """
 
-#G0.nodes(data="purchase",default=False)
-nx.set_node_attributes(G0,False,name="purchase")
-print(list(G0.nodes)[0]["purchase"])
+# set node attributes: 'purchase'=True/False
+nx.set_node_attributes(G0, False, name="purchase")
+#G0.nodes[145]['purchase'] = True
+#print(G0.nodes[31383]['purchase'])
 
-"""
+
+# setting node attributes: 'listened'=True/False
+our_artists = (artist_df[' artistID'] == 70) | (artist_df[' artistID'] == 150) | (artist_df[' artistID'] == 989) | (
+            artist_df[' artistID'] == 16326)
+our_artists_df = artist_df[our_artists]
+nx.set_node_attributes(G0, False, name="listened")
+for node in G0.node():
+    if node in our_artists_df['userID']:
+        G0.nodes[node]['listened'] = True
+########## maybe 4 attributes of listen one for every artist
+########## and 4 filters
+
+
 # analyze the edge creation probability
 sum_common_hist = [0] * (G_1.number_of_nodes() - 2)
 sum_real_hist = [0] * (G_1.number_of_nodes() - 2)
@@ -49,7 +63,22 @@ for i in range(6):
                 sum_common = len(list(nx.common_neighbors(Graph, user1, user2)))
                 if random.random() < probability_list[sum_common]:
                     Graph.add_edge(user1, user2)
-    """
+
+
+
+
+
+#filter = new.groupby('userID').size() == 2
+
+
+
+
+
+
+
+
+
+
 """
 import matplotlib.pyplot as plt
 nx.draw(Graph, with_labels=True)
