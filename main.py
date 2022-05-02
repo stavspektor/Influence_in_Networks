@@ -73,7 +73,26 @@ for i in range(len(sum_common_hist)):
     else:
         probability_list[i] = 0
 
-print(probability_list)
+
+largest_cc = max(nx.connected_components(G0), key=len)
+print(len(largest_cc))
+
+
+sum_listened_70 = 0
+for node in G0.nodes():
+    if node in largest_cc:
+        sum_listened_70 += G0.nodes[node]['listened_70']
+
+max_plays_70 = 0
+for node in G0.nodes():
+    if node in largest_cc:
+        G0.nodes[node]['proportion_plays_70'] = G0.nodes[node]['listened_70'] / sum_listened_70
+        if G0.nodes[node]['proportion_plays_70'] > max_plays_70:
+            max_plays_70 = G0.nodes[node]['proportion_plays_70']
+            temp = node
+
+G0.nodes[temp]['purchase_70'] = True
+
 
 # Simulation until t=6
 Graph = G0.copy()
@@ -81,6 +100,7 @@ for i in range(1, 7):
     print('i =', i)
     Graph_prev = Graph.copy()
     # Building the new Graph
+
     for user1 in nx.nodes(Graph):
         for user2 in nx.nodes(Graph):
             if user1 != user2 and Graph.has_edge(user1, user2) is False:
@@ -98,13 +118,14 @@ for i in range(1, 7):
         for neighbor in nx.neighbors(Graph, user):
             if Graph_prev.nodes[neighbor]['purchase_70']:
                 Bt_70 += 1
+                """
             if Graph_prev.nodes[neighbor]['purchase_150']:
                 Bt_150 += 1
             if Graph_prev.nodes[neighbor]['purchase_989']:
                 Bt_989 += 1
             if Graph_prev.nodes[neighbor]['purchase_16326']:
                 Bt_16326 += 1
-
+        """
         # For artist 70
         if Graph.nodes[user]['listened_70'] != 0:
             purchase_prob_70 = (Graph.nodes[user]['listened_70'] * Bt_70) / (1000 * Nt)
@@ -112,7 +133,7 @@ for i in range(1, 7):
             purchase_prob_70 = Bt_70 / Nt
         if random.random() < purchase_prob_70:
             Graph.nodes[user]['purchase_70'] = True
-
+        """
         # For artist 150
         if Graph.nodes[user]['listened_150'] != 0:
             purchase_prob_150 = (Graph.nodes[user]['listened_150'] * Bt_150) / (1000 * Nt)
@@ -136,16 +157,25 @@ for i in range(1, 7):
             purchase_prob_16326 = Bt_16326 / Nt
         if random.random() < purchase_prob_16326:
             Graph.nodes[user]['purchase_16326'] = True
-
+        """
     print('end i =', i)
 
+count = 0
+for node in Graph.nodes():
+    if Graph.nodes[node]['purchase_70']:
+        count += 1
+
+print('count =', count)
 
 
-#filter = new.groupby('userID').size() == 2
+#nx.set_node_attributes(G0, 0, name="grade")
 
+#for node in Graph.nodes():
 
 
 """
+filter = new.groupby('userID').size() == 2
+
 import matplotlib.pyplot as plt
 nx.draw(Graph, with_labels=True)
 plt.show()
