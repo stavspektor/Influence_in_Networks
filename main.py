@@ -59,7 +59,7 @@ def compute_IC(Graph_prev, node_list):
     total_spread = 0
 
     for i in range(1000):
-        nx.set_node_attributes(Graph_prev, False, name="purchase_989")
+        nx.set_node_attributes(Graph_prev, False, name="purchase_16326")
         infected = node_list[:]
         new_infected = node_list[:]
 
@@ -76,16 +76,16 @@ def compute_IC(Graph_prev, node_list):
 
                 for neighbor in nx.neighbors(Graph_prev, node):
                     if neighbor in infected:
-                        Bt_989 += 1
+                        Bt_16326 += 1
 
                 # For artist 70
-                if Graph_prev.nodes[node]['listened_989'] != 0:
-                    purchase_prob_989 = (Graph_prev.nodes[node]['listened_989'] * Bt_989) / (1000 * Nt)
+                if Graph_prev.nodes[node]['listened_16326'] != 0:
+                    purchase_prob_16326 = (Graph_prev.nodes[node]['listened_16326'] * Bt_16326) / (1000 * Nt)
                 else:
-                    purchase_prob_989 = Bt_989 / Nt
-                if random.random() < purchase_prob_989:
-                    Graph_prev.nodes[node]['purchase_989'] = True
-                    infected_nodes += list(np.extract(Graph_prev.nodes[node]['purchase_989'], neighbors))
+                    purchase_prob_16326 = Bt_16326 / Nt
+                if random.random() < purchase_prob_16326:
+                    Graph_prev.nodes[node]['purchase_16326'] = True
+                    infected_nodes += list(np.extract(Graph_prev.nodes[node]['purchase_16326'], neighbors))
                 """
                 # For artist 150
                 if Graph.nodes[node]['listened_150'] != 0:
@@ -138,7 +138,7 @@ def hill_climb(Graph_prev, shrink_nodes):
 
         influencers.append(best_influencer)
 
-    nx.set_node_attributes(Graph_prev, False, name="purchase_150")
+    nx.set_node_attributes(Graph_prev, False, name="purchase_16326")
 
     return influencers
 
@@ -161,9 +161,12 @@ for i in range(len(sum_common_hist)):
         probability_list[i] = sum_real_hist[i]/sum_common_hist[i]
     else:
         probability_list[i] = 0
+    if i >= 19:
+        probability_list[i] = max(probability_list)
 
 
 # narrow the number of node that are candidate to be influencers
+nx.set_node_attributes(G0, 0, name="sum_listened_16326")
 largest_cc = max(nx.connected_components(G0), key=len)
 max_neighbors = 0
 
@@ -176,22 +179,15 @@ shrink_graph_nodes = []
 for node in G0.nodes():
     if node in largest_cc:
         G0.nodes[node]['grade_neighbors'] = len(list(nx.neighbors(G0, node))) / max_neighbors
-        if G0.nodes[node]['grade_neighbors'] >= 0.8:
-            shrink_graph_nodes.append(node)
-
-dict_Graph = {}
-nx.set_node_attributes(G0, 0, name="sum_listened_989")
-for node in G0.nodes():
-    if node in shrink_graph_nodes:
         for neighbor in nx.neighbors(G0, node):
-            G0.nodes[node]['sum_listened_989'] += G0.nodes[neighbor]['listened_989']
-        G0.nodes[node]['Grade_989'] = G0.nodes[node]['sum_listened_989'] * G0.nodes[node]['grade_neighbors']
-        dict_Graph.update({node: G0.nodes[node]['Grade_989']})
+            G0.nodes[node]['sum_listened_16326'] += G0.nodes[neighbor]['listened_16326']
+        G0.nodes[node]['Grade_16326'] = G0.nodes[node]['sum_listened_16326'] * G0.nodes[node]['grade_neighbors']
+        if G0.nodes[node]['Grade_16326'] > 2.56359649122807:
+            shrink_graph_nodes.append(node)
 
 
 # Simulation until t=6
 Graph = G0.copy()
-
 for i in range(1, 7):
     print('i =', i)
     Graph_prev = Graph.copy()
@@ -200,7 +196,7 @@ for i in range(1, 7):
     if i == 1:
         best_influencers = hill_climb(Graph_prev, shrink_graph_nodes)
         for best_influencer in best_influencers:
-            Graph_prev.nodes[best_influencer]['purchase_989'] = True
+            Graph_prev.nodes[best_influencer]['purchase_16326'] = True
 
     # Building the new Graph
     for user1 in nx.nodes(Graph_prev):
@@ -212,24 +208,24 @@ for i in range(1, 7):
 
     # Calculating the purchase probabilities and update purchase per artist for every node
     for node in Graph.nodes():
-        Bt_989 = 0
+        Bt_16326 = 0
         neighbors = list(nx.neighbors(Graph, node))
         Nt = len(neighbors)
         for neighbor in nx.neighbors(Graph_prev, node):
-            if Graph_prev.nodes[neighbor]['purchase_989']:
-                Bt_989 += 1
+            if Graph_prev.nodes[neighbor]['purchase_16326']:
+                Bt_16326 += 1
 
-        if Graph.nodes[node]['listened_989'] != 0:
-            purchase_prob_989 = (Graph.nodes[node]['listened_150'] * Bt_989) / (1000 * Nt)
+        if Graph.nodes[node]['listened_16326'] != 0:
+            purchase_prob_16326 = (Graph.nodes[node]['listened_16326'] * Bt_16326) / (1000 * Nt)
         else:
-            purchase_prob_989 = Bt_989 / Nt
-        if random.random() < purchase_prob_989:
-            Graph.nodes[node]['purchase_989'] = True
+            purchase_prob_16326 = Bt_16326 / Nt
+        if random.random() < purchase_prob_16326:
+            Graph.nodes[node]['purchase_16326'] = True
 
 
 count = 0
 for node in Graph.nodes():
-    if Graph.nodes[node]['purchase_989']:
+    if Graph.nodes[node]['purchase_16326']:
         count += 1
 
 print('count =', count)
