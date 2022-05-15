@@ -17,48 +17,28 @@ Diff = nx.difference(G0, G_1)
 """
 
 # Set node attributes: 'purchase'=True/False
-nx.set_node_attributes(G0, False, name="purchase_70")
-nx.set_node_attributes(G0, False, name="purchase_150")
-nx.set_node_attributes(G0, False, name="purchase_989")
 nx.set_node_attributes(G0, False, name="purchase_16326")
 #G0.nodes[145]['purchase'] = True
 #print(G0.nodes[31383]['purchase'])
 
 
 # Setting node attributes number of plays for every artist: 'listened_ID'
-artist_70 = artist_df[' artistID'] == 70
-artist_150 = artist_df[' artistID'] == 150
-artist_989 = artist_df[' artistID'] == 989
 artist_16326 = artist_df[' artistID'] == 16326
-
-artist_70_df = artist_df[artist_70]
-artist_150_df = artist_df[artist_150]
-artist_989_df = artist_df[artist_989]
 artist_16326_df = artist_df[artist_16326]
 
-nx.set_node_attributes(G0, 0, name="listened_70")
-nx.set_node_attributes(G0, 0, name="listened_150")
-nx.set_node_attributes(G0, 0, name="listened_989")
 nx.set_node_attributes(G0, 0, name="listened_16326")
 
 for node in G0.nodes():
-    if node in list(artist_70_df.loc[:, 'userID']):
-        G0.nodes[node]['listened_70'] = artist_70_df.loc[int((artist_70_df['userID'] == node).index.tolist()[0]), '#plays']
-
-    if node in list(artist_150_df.loc[:, 'userID']):
-        G0.nodes[node]['listened_150'] = artist_150_df.loc[int((artist_150_df['userID'] == node).index.tolist()[0]), '#plays']
-
-    if node in list(artist_989_df.loc[:, 'userID']):
-        G0.nodes[node]['listened_989'] = artist_989_df.loc[int((artist_989_df['userID'] == node).index.tolist()[0]), '#plays']
-
     if node in list(artist_16326_df.loc[:, 'userID']):
         G0.nodes[node]['listened_16326'] = artist_16326_df.loc[int((artist_16326_df['userID'] == node).index.tolist()[0]), '#plays']
 
+
 # simulating the spread that each group of nodes can cause
 def compute_IC(Graph_prev, node_list):
+    print("start IC")
     total_spread = 0
-
-    for i in range(1000):
+    for i in range(10):
+        print("IC i =", i)
         infected = node_list[:]
         new_infected = node_list[:]
 
@@ -66,11 +46,10 @@ def compute_IC(Graph_prev, node_list):
         while new_infected:
             infected_nodes = []
             for node in new_infected:
-                Bt_16326 = 0
-                neighbors = list(nx.neighbors(Graph_prev, node))
-                Nt = len(neighbors)
-
                 for neighbor in nx.neighbors(Graph_prev, node):
+                    Bt_16326 = 0
+                    neighbors = list(nx.neighbors(Graph_prev, neighbor))
+                    Nt = len(neighbors)
                     for subneighbor in nx.neighbors(Graph_prev, neighbor):
                         if subneighbor in infected:
                             Bt_16326 += 1
@@ -80,7 +59,7 @@ def compute_IC(Graph_prev, node_list):
                     else:
                         purchase_prob_16326 = Bt_16326 / Nt
 
-                    if random.random() < purchase_prob_16326:
+                    if random.random() <= purchase_prob_16326:
                         infected_nodes += [neighbor]
 
             new_infected = list(set(infected_nodes) - set(infected))
@@ -88,13 +67,12 @@ def compute_IC(Graph_prev, node_list):
 
         total_spread += len(infected)
 
-    return total_spread / 1000
+    return total_spread / 10
 
 
 # finding the 5 influencers using hill climb method
 def hill_climb(Graph_prev, shrink_nodes):
     influencers = []
-
     for i in range(5):
         best_influencer = -1
         best_spread = -np.inf
@@ -115,7 +93,7 @@ sum_common_hist = [0] * (G_1.number_of_nodes() - 2)
 sum_real_hist = [0] * (G_1.number_of_nodes() - 2)
 for user1 in nx.nodes(G_1):
     for user2 in nx.nodes(G_1):
-        if user1 != user2 and G_1.has_edge(user1, user2) is False:
+        if user1 != user2 and (G_1.has_edge(user1, user2) is False):
             sum_common = len(list(nx.common_neighbors(G_1, user1, user2)))
             sum_common_hist[sum_common] += 1
             if G0.has_edge(user1, user2):
@@ -124,7 +102,7 @@ for user1 in nx.nodes(G_1):
 probability_list = [0] * (G_1.number_of_nodes() - 2)
 for i in range(len(sum_common_hist)):
     if sum_common_hist[i] != 0:
-        probability_list[i] = sum_real_hist[i]/sum_common_hist[i]
+        probability_list[i] = sum_real_hist[i] / sum_common_hist[i]
     else:
         probability_list[i] = 0
     if i >= 19:
@@ -148,7 +126,7 @@ for node in G0.nodes():
         for neighbor in nx.neighbors(G0, node):
             G0.nodes[node]['sum_listened_16326'] += G0.nodes[neighbor]['listened_16326']
         G0.nodes[node]['Grade_16326'] = G0.nodes[node]['sum_listened_16326'] * G0.nodes[node]['grade_neighbors']
-        if G0.nodes[node]['Grade_16326'] > 2.56359649122807:
+        if G0.nodes[node]['Grade_16326'] > 4:
             shrink_graph_nodes.append(node)
 
 
@@ -156,19 +134,20 @@ for node in G0.nodes():
 Graph = G0.copy()
 Graph_prev = Graph.copy()
 best_influencers = hill_climb(Graph_prev, shrink_graph_nodes)
-for best_influencer in best_influencers:
-    Graph_prev.nodes[best_influencer]['purchase_16326'] = True
+print("best influencers:", best_influencers)
+for influencer in best_influencers:
+    Graph_prev.nodes[influencer]['purchase_16326'] = True
 
 
+count = 0
 # Simulation until t=6
 for i in range(1, 7):
-    print('i =', i)
-    Graph_prev = Graph.copy()
+    print('simulation i =', i)
 
     # Building the new Graph
     for user1 in nx.nodes(Graph_prev):
         for user2 in nx.nodes(Graph_prev):
-            if user1 != user2 and Graph_prev.has_edge(user1, user2) is False:
+            if user1 != user2 and (Graph_prev.has_edge(user1, user2) is False):
                 sum_common = len(list(nx.common_neighbors(Graph_prev, user1, user2)))
                 if random.random() < probability_list[sum_common]:
                     Graph.add_edge(user1, user2)
@@ -186,17 +165,39 @@ for i in range(1, 7):
             purchase_prob_16326 = (Graph.nodes[node]['listened_16326'] * Bt_16326) / (1000 * Nt)
         else:
             purchase_prob_16326 = Bt_16326 / Nt
-        if random.random() < purchase_prob_16326:
+        if random.random() <= purchase_prob_16326:
             Graph.nodes[node]['purchase_16326'] = True
 
+    Graph_prev = Graph.copy()
 
-count = 0
-for node in Graph.nodes():
-    if Graph.nodes[node]['purchase_16326']:
-        count += 1
 
-print('count =', count)
+    for node in Graph.nodes():
+        if Graph.nodes[node]['purchase_16326']:
+            count += 1
+
+    print('count =', count)
 print('influencers =', best_influencers)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
