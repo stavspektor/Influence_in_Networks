@@ -47,7 +47,7 @@ def purchase_simulating_per_time(Graph_prev, node_list):
 def compute_IC(node_list):
     print("start IC")
     spread = 0
-    for i in range(30):
+    for i in range(100):
         print("IC ", i)
         infected1 = purchase_simulating_per_time(G0, node_list)
         infected2 = purchase_simulating_per_time(G1, infected1)
@@ -56,8 +56,7 @@ def compute_IC(node_list):
         infected5 = purchase_simulating_per_time(G4, infected4)
         infected6 = purchase_simulating_per_time(G5, infected5)
         spread += len(infected6)
-
-    return spread / 30
+    return spread / 100
 
 
 # finding the 5 influencers using hill climb method
@@ -108,7 +107,7 @@ G_1 = nx.from_pandas_edgelist(instaglam_1_df, 'userID', 'friendID')
 #nx.set_node_attributes(G0, False, name="purchase")
 
 # Filtering the dataframe for the relevant artist
-artist = artist_df[' artistID'] == 16326
+artist = artist_df[' artistID'] == 150
 artist_df = artist_df[artist]
 
 # Setting number plays of artist for every node
@@ -152,23 +151,30 @@ print("start building graph", 6)
 G6 = build_graph(G5)
 
 # narrow the number of node that are candidate to be influencers
-nx.set_node_attributes(G0, 0, name="sum_listened")
-largest_cc = max(nx.connected_components(G0), key=len)
+nx.set_node_attributes(G6, 0, name="sum_listened")
+largest_cc = max(nx.connected_components(G6), key=len)
 max_neighbors = 0
 
-for node in G0.nodes():
+for node in G6.nodes():
     if node in largest_cc:
-        if len(list(nx.neighbors(G0, node))) > max_neighbors:
-            max_neighbors = len(list(nx.neighbors(G0, node)))
+        if len(list(nx.neighbors(G6, node))) > max_neighbors:
+            max_neighbors = len(list(nx.neighbors(G6, node)))
 
 shrink_graph_nodes = []
-for node in G0.nodes():
+grades = []
+for node in G6.nodes():
     if node in largest_cc:
-        G0.nodes[node]['grade_neighbors'] = len(list(nx.neighbors(G0, node))) / max_neighbors
-        for neighbor in nx.neighbors(G0, node):
-            G0.nodes[node]['sum_listened'] += G0.nodes[neighbor]['listened']
-        G0.nodes[node]['Grade'] = G0.nodes[node]['sum_listened'] * G0.nodes[node]['grade_neighbors']
-        if G0.nodes[node]['Grade'] > 3.609375:
+        G6.nodes[node]['grade_neighbors'] = len(list(nx.neighbors(G6, node))) / max_neighbors
+        for neighbor in nx.neighbors(G6, node):
+            G6.nodes[node]['sum_listened'] += G0.nodes[neighbor]['listened']
+        G6.nodes[node]['Grade'] = G6.nodes[node]['sum_listened'] * G6.nodes[node]['grade_neighbors']
+        if G6.nodes[node]['Grade'] != 0:
+            grades.append(G6.nodes[node]['Grade'])
+
+median = np.median(grades)
+for node in G6.nodes():
+    if node in largest_cc:
+        if G6.nodes[node]['Grade'] > median:
             shrink_graph_nodes.append(node)
 
 
@@ -178,7 +184,7 @@ best_influencers = hill_climb(shrink_graph_nodes)
 print("best influencers:", best_influencers)
 for influencer in best_influencers:
     purchased += [influencer]
-    #G0.nodes[influencer]['purchase'] = True
+
 
 # Checking the purchases throw 6 times
 purchased = purchase_probability(G1, G0, purchased)
