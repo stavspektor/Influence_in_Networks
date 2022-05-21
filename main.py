@@ -47,7 +47,7 @@ def purchase_simulating_per_time(Graph_prev, node_list):
 def compute_IC(node_list):
     print("start IC")
     spread = 0
-    for i in range(100):
+    for i in range(5):
         print("IC ", i)
         infected1 = purchase_simulating_per_time(G0, node_list)
         infected2 = purchase_simulating_per_time(G1, infected1)
@@ -62,7 +62,7 @@ def compute_IC(node_list):
 # finding the 5 influencers using hill climb method
 def hill_climb(shrink_nodes):
     influencers = []
-    for i in range(5):
+    for i in range(30):
         print("hill_climb ", i)
         best_influencer = -1
         best_spread = -np.inf
@@ -93,6 +93,14 @@ def purchase_probability(graph, graph_prev, infected):
             infected = list(set(infected))
     return infected
 
+# function that returns the k largest items in a given list
+def kLargest(list, k):
+    toplist = []
+    list.sort(reverse=True)
+    for i in range(k):
+        toplist.append(list[i])
+    return toplist
+
 
 ####################################################################################################
 instaglam0_df = pd.read_csv('instaglam0.csv')
@@ -107,7 +115,7 @@ G_1 = nx.from_pandas_edgelist(instaglam_1_df, 'userID', 'friendID')
 #nx.set_node_attributes(G0, False, name="purchase")
 
 # Filtering the dataframe for the relevant artist
-artist = artist_df[' artistID'] == 150
+artist = artist_df[' artistID'] == 989
 artist_df = artist_df[artist]
 
 # Setting number plays of artist for every node
@@ -171,10 +179,11 @@ for node in G6.nodes():
         if G6.nodes[node]['Grade'] != 0:
             grades.append(G6.nodes[node]['Grade'])
 
-median = np.median(grades)
+top40grades_list = kLargest(grades, 40)
+# median = np.median(grades)
 for node in G6.nodes():
     if node in largest_cc:
-        if G6.nodes[node]['Grade'] > median:
+        if G6.nodes[node]['Grade'] in top40grades_list:
             shrink_graph_nodes.append(node)
 
 
