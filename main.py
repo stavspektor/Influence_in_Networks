@@ -47,7 +47,7 @@ def purchase_simulating_per_time(Graph_prev, node_list):
 def compute_IC(node_list):
     print("start IC")
     spread = 0
-    for i in range(5):
+    for i in range(100):
         print("IC ", i)
         infected1 = purchase_simulating_per_time(G0, node_list)
         infected2 = purchase_simulating_per_time(G1, infected1)
@@ -62,7 +62,7 @@ def compute_IC(node_list):
 # finding the 5 influencers using hill climb method
 def hill_climb(shrink_nodes):
     influencers = []
-    for i in range(30):
+    for i in range(5):
         print("hill_climb ", i)
         best_influencer = -1
         best_spread = -np.inf
@@ -115,14 +115,16 @@ G_1 = nx.from_pandas_edgelist(instaglam_1_df, 'userID', 'friendID')
 #nx.set_node_attributes(G0, False, name="purchase")
 
 # Filtering the dataframe for the relevant artist
-artist = artist_df[' artistID'] == 989
+artist = artist_df[' artistID'] == 16326
 artist_df = artist_df[artist]
 
 # Setting number plays of artist for every node
+total_plays = 0
 nx.set_node_attributes(G0, 0, name="listened")
 for node in G0.nodes():
     if node in list(artist_df.loc[:, 'userID']):
         G0.nodes[node]['listened'] = artist_df.loc[int((artist_df['userID'] == node).index.tolist()[0]), '#plays']
+        total_plays += G0.nodes[node]['listened']
 
 # Analyze the edge creation probability
 sum_common_hist = [0] * (G_1.number_of_nodes() - 2)
@@ -172,21 +174,31 @@ shrink_graph_nodes = []
 grades = []
 for node in G6.nodes():
     if node in largest_cc:
-        G6.nodes[node]['grade_neighbors'] = len(list(nx.neighbors(G6, node))) / max_neighbors
+        #G6.nodes[node]['grade_neighbors'] = len(list(nx.neighbors(G6, node))) / max_neighbors
         for neighbor in nx.neighbors(G6, node):
             G6.nodes[node]['sum_listened'] += G0.nodes[neighbor]['listened']
-        G6.nodes[node]['Grade'] = G6.nodes[node]['sum_listened'] * G6.nodes[node]['grade_neighbors']
+        G6.nodes[node]['Grade'] = G6.nodes[node]['sum_listened'] / total_plays
+        #G6.nodes[node]['Grade'] = G6.nodes[node]['sum_listened'] * G6.nodes[node]['grade_neighbors']
         if G6.nodes[node]['Grade'] != 0:
             grades.append(G6.nodes[node]['Grade'])
 
-top40grades_list = kLargest(grades, 40)
-# median = np.median(grades)
+
+median = np.median(grades)
 for node in G6.nodes():
     if node in largest_cc:
-        if G6.nodes[node]['Grade'] in top40grades_list:
+        if G6.nodes[node]['Grade'] >= median:
             shrink_graph_nodes.append(node)
 
+if len(shrink_graph_nodes) > 50:
+    shrink_graph_nodes = []
+    top50grades_list = kLargest(grades, 50)
+    for node in G6.nodes():
+        if node in largest_cc:
+            if G6.nodes[node]['Grade'] in top50grades_list:
+                shrink_graph_nodes.append(node)
 
+
+"""
 # calling to hill climb algorithm function
 purchased = []
 best_influencers = hill_climb(shrink_graph_nodes)
@@ -209,7 +221,7 @@ print('count =', len(set(purchased)))
 
 
 
-
+"""
 
 
 
